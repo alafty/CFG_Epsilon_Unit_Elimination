@@ -32,4 +32,4 @@ The program outputs the modified CFG after eliminating epsilon and unit rules.
 
 ## Authors
 
-- [Mohamed Moustafa](https://github.com/alafty)
+- [Mohamed El-Alafty](https://github.com/alafty)
