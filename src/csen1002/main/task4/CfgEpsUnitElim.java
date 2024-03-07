@@ -169,7 +169,35 @@ public class CfgEpsUnitElim {
 	 * Eliminates Unit Rules from the grammar
 	 */
 	public void eliminateUnitRules() {
+		boolean localChanges = false;
+		for(String key : rules.keySet()){
+			ArrayList<String> toBeAdded = new ArrayList<>();
+			System.out.println("Removing For: " + key);
 
+			for(String rule : rules.get(key)){
+				if(rule.length() == 1 && variables.contains(rule)){
+					System.out.println("To Be Removed:" + rule);
+					toBeAdded.add(rule);
+					localChanges = true;
+				}
+			}
+			for(String newRule : toBeAdded) {
+				rules.get(key).remove(newRule);
+				if (!key.equals(newRule)) {
+					for(String duplicate : rules.get(newRule)){
+						if(!rules.get(key).contains(duplicate)){
+							rules.get(key).add(duplicate);
+						}
+					}
+				}
+			}
+			System.out.println("Rules after removal: " + rules);
+			toBeAdded.clear();
+
+		}
+		if(localChanges){
+			eliminateUnitRules();
+		}
 	}
 
 	public static void main (String[] args){
