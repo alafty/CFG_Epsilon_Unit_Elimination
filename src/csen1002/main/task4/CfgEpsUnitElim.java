@@ -1,8 +1,6 @@
 package csen1002.main.task4;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Write your info here
@@ -19,6 +17,7 @@ public class CfgEpsUnitElim {
 
 	HashMap<String, ArrayList<String>> rules = new HashMap<>();
 
+	ArrayList<String> removedEpsilonFrom = new ArrayList<>();
 	/**
 	 * Constructs a Context Free Grammar
 	 * 
@@ -36,7 +35,6 @@ public class CfgEpsUnitElim {
 		for(int i= 0; i < variables.size(); i++){
 			ArrayList<String> rightHand = new ArrayList<>();
 			String[] temp = cfgArray[2].split(";")[i].split("/")[1].split(",");
-			System.out.println(temp);
 			rightHand.addAll(List.of(temp));
 			rules.put(variables.get(i), rightHand);
 		}
@@ -53,26 +51,133 @@ public class CfgEpsUnitElim {
 	 */
 	@Override
 	public String toString() {
-		// TODO Auto-generated method stub
-		return null;
+		String returnString = "";
+
+		for(String var : variables){
+			returnString += var + ";";
+		}
+		returnString = returnString.substring(0, returnString.length() - 1);
+		returnString += "#";
+
+		for(String terminal : terminals){
+			returnString += terminal + ";";
+		}
+		returnString = returnString.substring(0, returnString.length() - 1);
+		returnString += "#";
+
+		for(String key : variables){
+			returnString += key + "/";
+			Collections.sort(rules.get(key));
+			for(String rule : rules.get(key)){
+				returnString += rule + ",";
+			}
+			returnString = returnString.substring(0, returnString.length() - 1);
+			returnString += ";";
+		}
+
+		return returnString.substring(0, returnString.length() - 1);
 	}
 
 	/**
 	 * Eliminates Epsilon Rules from the grammar
 	 */
 	public void eliminateEpsilonRules() {
-		// TODO Auto-generated method stub
+		boolean localChanges = false;
+		for(String key : rules.keySet()){
+			if(rules.get(key).contains("e")){
+				rules.get(key).remove("e");
+				System.out.println("The Variable: " + key);
+
+				if(!removedEpsilonFrom.contains(key)) {
+					if (SubstituteEpsilonFor(key)) {
+						localChanges = true;
+						removedEpsilonFrom.add(key);
+					}
+				}
+				System.out.println("Rules after removal: " + rules);
+			}
+		}
+		if(localChanges){
+			eliminateEpsilonRules();
+		}
+	}
+
+	public boolean SubstituteEpsilonFor(String key){
+		boolean localChanges = false;
+		//loops over every other variable
+		for(String currKey : rules.keySet()){
+			//if(currKey.equals(key)){continue;}
+			ArrayList<String> toBeAdded = new ArrayList<>();
+
+			//loops over every rule for currKey
+			for(String miniRule : rules.get(currKey)){
+				//checks if the current rule has the key inside it
+				if(miniRule.contains(key)){
+					ArrayList<String> newRules = GenerateNewRules(miniRule, key);
+					for(String newRule : newRules) {
+						if (!rules.get(currKey).contains(newRule) && !toBeAdded.contains(newRule)) {
+							if(newRule.equals("e") && removedEpsilonFrom.contains(currKey)){continue;}
+							toBeAdded.add(newRule);
+							localChanges = true;
+						}
+					}
+				}
+			}
+			rules.get(currKey).addAll(toBeAdded);
+
+		}
+		return localChanges;
+	}
+
+	public ArrayList<String> GenerateNewRules(String rule, String variable){
+		String newRuleSoFar = "";
+		int totalOccurrences = 0;
+
+		ArrayList<String> possiblePermutations = new ArrayList<>();
+
+		//calculate the total number of occurrences of the variable inside the rule
+		for(int i= 0; i < rule.length(); i++){
+			if(rule.charAt(i) == variable.charAt(0)){totalOccurrences++;}
+		}
+
+		for(int j = 0; j < totalOccurrences; j++) {
+			int occurencesSoFar = 0;
+			for (int i = 0; i < rule.length(); i++) {
+				if (rule.charAt(i) == variable.charAt(0)) {
+					occurencesSoFar++;
+					if(occurencesSoFar - 1 == j) {
+						continue;
+					}
+				}
+				newRuleSoFar += rule.charAt(i);
+			}
+			if(newRuleSoFar.length() == 0) {newRuleSoFar = "e";}
+			if(!possiblePermutations.contains(newRuleSoFar)){
+				possiblePermutations.add(newRuleSoFar);
+			}
+			newRuleSoFar = "";
+		}
+
+		for(int i = 0; i < possiblePermutations.size(); i++){
+			possiblePermutations.addAll(GenerateNewRules(possiblePermutations.get(i), variable));
+		}
+
+		return possiblePermutations;
 	}
 
 	/**
 	 * Eliminates Unit Rules from the grammar
 	 */
 	public void eliminateUnitRules() {
-		// TODO Auto-generated method stub
+
 	}
 
 	public static void main (String[] args){
-		CfgEpsUnitElim test = new CfgEpsUnitElim("S;A;B;C#a;b;c;d;x#S/aAb,xB;A/Bc,C,c,d;B/CACA,e;C/A,b,e");
+		String test1 = "S;A;B;C#a;b;c;d;x#S/aAb,xB;A/Bc,C,c,d;B/CACA,e;C/A,b,e";
+		String test2 = "S;V;Z;R;W#m;n;w#S/RnV,m;V/S,V,Z,e,n,nRmWS,nVmRR;Z/S,WwZ,ZRR,e,nSnV;R/R,SRwVZ,SW,Zw,e;W/ZVR,mWn";
+		CfgEpsUnitElim test = new CfgEpsUnitElim(test1);
+		test.eliminateUnitRules();
+
 	}
 
 }
